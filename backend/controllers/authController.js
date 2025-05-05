@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-exports.register = async (req, res, next) => {
+const register = async (req, res, next) => {
   try {
     const { firstName, lastName, email, phone, cin, password, role } = req.body;
 
@@ -41,7 +41,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -85,7 +85,7 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.getUser = async (req, res, next) => {
+const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -114,7 +114,7 @@ exports.getUser = async (req, res, next) => {
   }
 };
 
-exports.logout = (req, res, next) => {
+const logout = (req, res, next) => {
   try {
     res.clearCookie('token');
     res.status(200).json({
@@ -126,7 +126,7 @@ exports.logout = (req, res, next) => {
   }
 };
 
-exports.refreshToken = async (req, res, next) => {
+const refreshToken = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -154,7 +154,7 @@ exports.refreshToken = async (req, res, next) => {
   }
 };
 
-exports.forgotPassword = async (req, res, next) => {
+const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ where: { email } });
@@ -182,7 +182,7 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-exports.resetPassword = async (req, res, next) => {
+const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
     const { password } = req.body;

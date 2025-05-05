@@ -7,7 +7,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const mysql = require('mysql2/promise'); // Utilisation de mysql2 avec promesses
 require('dotenv').config();
-
+ 
 // Import des routes
 const apiRoutes = require('./routes/index');
 
