@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import authApi from '../api/authApi';  // Importation par défaut, sans accolades
 import { jwtDecode } from 'jwt-decode';
 
 export const AuthContext = createContext();
@@ -42,14 +42,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = useCallback(
-    async (credentials, rememberMe = true) => {
+    async (credentials) => {
       try {
         setLoading(true);
         setError(null);
 
-        const { data } = await axios.post('/api/auth/login', credentials);
+        const { data } = await authApi.login(credentials.email, credentials.password);
         const token = data.token;
-        localStorage.setItem('token', token); // Always use localStorage for consistency
+        localStorage.setItem('token', token);
 
         const decoded = jwtDecode(token);
         setUser(decoded);
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         setError(null);
 
-        const { data } = await axios.post('/api/auth/register', userData);
+        const { data } = await authApi.register(userData);
         const token = data.token;
         localStorage.setItem('token', token);
 
@@ -94,15 +94,21 @@ export const AuthProvider = ({ children }) => {
     [navigate]
   );
 
+  const hasRole = (requiredRole) => {
+    if (!user) return false;
+    return user.role === requiredRole;
+  };
+
   const value = {
     user,
     loading,
     error,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: hasRole('admin'),
     login,
     logout,
     register,
+    hasRole,
     clearErrors: () => setError(null),
   };
 

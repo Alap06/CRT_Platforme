@@ -1,35 +1,17 @@
-// src/hooks/useApi.js
-import { useState, useCallback } from 'react';
+// src/hooks/useAuth.js
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
-export function useApi() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+/**
+ * Hook personnalisé pour accéder au contexte d'authentification
+ * Permet de réutiliser les fonctionnalités d'authentification dans toute l'application
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (!context) {
+    throw new Error('useAuth doit être utilisé dans un AuthProvider');
+  }
 
-  const callApi = useCallback(async (apiFunction, ...args) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await apiFunction(...args);
-      setData(response.data);
-      return response;
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return {
-    data,
-    error,
-    loading,
-    callApi,
-    reset: () => {
-      setData(null);
-      setError(null);
-    }
-  };
+  return context;
 }
