@@ -7,20 +7,37 @@ const { check, validationResult } = require('express-validator');
  */
 exports.validate = (validations) => {
   return async (req, res, next) => {
-    // Exécuter toutes les validations
-    await Promise.all(validations.map(validation => validation.run(req)));
-    
-    // Vérifier les résultats
-    const errors = validationResult(req);
-    if (errors.isEmpty()) {
-      return next();
+    try {
+      // Exécuter toutes les validations
+      await Promise.all(validations.map(validation => validation.run(req)));
+      
+      // Vérifier les résultats
+      const errors = validationResult(req);
+      if (errors.isEmpty()) {
+        return next();
+      }
+      
+      // Format errors in a more user-friendly format
+      const formattedErrors = errors.array().map(error => ({
+        field: error.path,
+        message: error.msg
+      }));
+      
+      // Renvoyer les erreurs de validation
+      return res.status(400).json({
+        success: false,
+        message: 'Erreur de validation',
+        code: 'VALIDATION_ERROR',
+        errors: formattedErrors
+      });
+    } catch (err) {
+      console.error('Validation middleware error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la validation des données',
+        code: 'VALIDATION_SYSTEM_ERROR'
+      });
     }
-    
-    // Renvoyer les erreurs de validation
-    return res.status(400).json({
-      success: false,
-      errors: errors.array()
-    });
   };
 };
 
@@ -37,8 +54,7 @@ exports.userValidations = {
     .withMessage('Statut invalide'),
   
   userId: check('id')
-    .isInt()
-    .toInt()
+    .isMongoId()
     .withMessage('ID utilisateur invalide'),
   
   pagination: [

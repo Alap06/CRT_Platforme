@@ -45,19 +45,66 @@ export const AuthProvider = ({ children }) => {
     checkLoggedIn();
   }, []);
 
-  // Login user
+  // Login user with improved request handling
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-      
-      localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
-      setIsAuthenticated(true);
+      // Clear any previous errors
       setError(null);
       
-      return res.data;
+      // More robust client-side validation
+      if (!email || typeof email !== 'string' || email.trim() === '') {
+        const errorMsg = 'Email requis';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      if (!password || typeof password !== 'string' || password === '') {
+        const errorMsg = 'Mot de passe requis';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      console.log('Sending login request with:', { email: email.trim() });
+      
+      // Create proper payload with stringified data
+      const payload = JSON.stringify({
+        email: email.trim(),
+        password: password
+      });
+      
+      const res = await axios.post(
+        `${API_URL}/auth/login`, 
+        payload,
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          withCredentials: true 
+        }
+      );
+      
+      if (!res.data) {
+        throw new Error('No response data received');
+      }
+      
+      // Store token and update state
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        setUser(res.data.data);
+        setIsAuthenticated(true);
+        return res.data;
+      } else {
+        throw new Error('No token received from server');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur de connexion');
+      console.error('Login error:', err);
+      const errorMessage = 
+        err.response?.data?.message || 
+        err.message ||
+        'Erreur de connexion';
+      
+      setError(errorMessage);
       throw err;
     }
   };

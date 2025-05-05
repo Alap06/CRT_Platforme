@@ -5,61 +5,20 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const mysql = require('mysql2/promise'); // Utilisation de mysql2 avec promesses
+const connectDB = require('./config/db'); // Import de la fonction de connexion Mongoose
 require('dotenv').config();
- 
+
 // Import des routes
 const apiRoutes = require('./routes/index');
 
-// Configuration de la connexion MySQL
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'gestion_volontaire',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
+// Import the debug middleware
+const { debugRequest } = require('./middlewares/debugMiddleware');
 
-// Création du pool de connexions
-const pool = mysql.createPool(dbConfig);
-
-// Vérification de la connexion à MySQL
-async function testConnection() {
-  try {
-    const connection = await pool.getConnection();
-    console.log('Connexion à MySQL établie avec succès');
-    connection.release();
-  } catch (err) {
-    console.error('Erreur de connexion à MySQL:', err);
-    process.exit(1);
-  }
-}
-testConnection();
+// Connexion à MongoDB
+connectDB();
 
 // Initialisation de l'app Express
 const app = express();
-
-// Middleware pour injecter la connexion DB dans les requêtes
-app.use(async (req, res, next) => {
-  try {
-    req.db = await pool.getConnection();
-    next();
-  } catch (err) {
-    console.error('Erreur lors de l\'obtention de la connexion:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur de connexion à la base de données'
-    });
-  }
-});
-
-// Middleware pour libérer la connexion après chaque requête
-app.use((req, res, next) => {
-  if (req.db) req.db.release();
-  next();
-});
 
 // Middleware de sécurité
 app.use(helmet());
@@ -67,10 +26,20 @@ app.use(helmet());
 // Configuration CORS
 const corsOptions = {
   origin: [process.env.CLIENT_URL, process.env.CORS_ORIGIN],
-  credentials: true ,// Important si vous utilisez withCredentials: true
+  credentials: true,
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
+
+// Update CORS to be more permissive in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(cors({
+    origin: true, // Allow any origin in development
+    credentials: true
+  }));
+} else {
+  // Use the configured CORS in production
+  app.use(cors(corsOptions));
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -85,11 +54,52 @@ const limiter = rateLimit({
   }
 });
 
+// Apply debug middleware before body parser
+if (process.env.NODE_ENV === 'development') {
+  app.use(debugRequest);
+}
+
 // Middleware de base
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: false }));
+
+// Improve body parsing with more flexibility
+app.use(express.json({ 
+  limit: '10kb', 
+  strict: false,
+  reviver: (key, value) => value
+}));
+
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10kb' 
+}));
+
 app.use(cookieParser());
+
+// Add body-parser raw for debugging
+app.use((req, res, next) => {
+  // Log raw body for debugging if content-type is not recognized
+  if (req.method === 'POST' && !req.body && req._body === false) {
+    console.log('Raw body parsing needed - content type:', req.headers['content-type']);
+    
+    let data = '';
+    req.on('data', chunk => {
+      data += chunk;
+    });
+    
+    req.on('end', () => {
+      console.log('Raw request body:', data);
+      try {
+        req.body = JSON.parse(data);
+      } catch (e) {
+        console.log('Failed to parse raw body');
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+});
 
 // Montage des routes principales
 app.use('/api', limiter, apiRoutes);
@@ -107,9 +117,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   
-  // Libérer la connexion en cas d'erreur
-  if (req.db) req.db.release();
-  
   const statusCode = err.statusCode || 500;
   
   res.status(statusCode).json({
@@ -120,22 +127,36 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Fermeture propre du pool à l'arrêt de l'application
-process.on('SIGINT', async () => {
-  try {
-    await pool.end();
-    console.log('Pool MySQL fermé proprement');
-    process.exit(0);
-  } catch (err) {
-    console.error('Erreur lors de la fermeture du pool MySQL:', err);
+// Gestion propre des erreurs
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+  console.error(err.name, err.message);
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  } else {
     process.exit(1);
+  }
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM RECEIVED. Shutting down gracefully');
+  if (server) {
+    server.close(() => {
+      console.log('Process terminated!');
+    });
   }
 });
 
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT} en mode ${process.env.NODE_ENV || 'development'}`);
 });
 
+// Export the app directly for supertest to work properly
 module.exports = app;
+
+// Keep the object export for backward compatibility
+module.exports.server = server;

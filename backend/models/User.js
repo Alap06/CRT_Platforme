@@ -1,114 +1,102 @@
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { promisify } = require('util');
 
-class User {
-  constructor(db) {
-    this.db = db;
+const userSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    required: [true, 'Veuillez fournir votre prénom']
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Veuillez fournir votre nom']
+  },
+  email: {
+    type: String,
+    required: [true, 'Veuillez fournir votre email'],
+    unique: true,
+    lowercase: true
+  },
+  phone: {
+    type: String,
+    required: [true, 'Veuillez fournir votre numéro de téléphone']
+  },
+  cin: {
+    type: String,
+    required: [true, 'Veuillez fournir votre CIN'],
+    length: 8
+  },
+  password: {
+    type: String,
+    required: [true, 'Veuillez fournir un mot de passe'],
+    minlength: 6,
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ['benevole', 'donateur', 'partenaire', 'admin'],
+    default: 'benevole'
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'suspended', 'banned'],
+    default: 'pending'
+  },
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Encrypt password before saving
+userSchema.pre('save', async function(next) {
+  // Only run this function if password was modified
+  if (!this.isModified('password')) return next();
+  
+  // Hash the password
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+// Update password changed timestamp
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  
+  this.passwordChangedAt = Date.now() - 1000; // Subtract 1 second to ensure token is created after password change
+  next();
+});
+
+// Method to check if password is correct
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to check if password was changed after token was issued
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changedTimestamp;
   }
+  return false;
+};
 
-  // Méthode pour hacher un mot de passe
-  static async hashPassword(password) {
-    return await bcrypt.hash(password, 12);
-  }
-
-  // Méthode pour comparer les mots de passe
-  static async comparePasswords(candidatePassword, hashedPassword) {
-    return await bcrypt.compare(candidatePassword, hashedPassword);
-  }
-
-  // Méthode pour créer un token de réinitialisation
-  static createPasswordResetToken() {
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
-    const resetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+// Method to generate password reset token
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
     
-    return { resetToken, hashedToken, resetExpires };
-  }
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  
+  return resetToken;
+};
 
-  // Trouver un utilisateur par email
-  async findByEmail(email) {
-    const [rows] = await this.db.execute(
-      'SELECT * FROM users WHERE email = ?', 
-      [email]
-    );
-    return rows[0] || null;
-  }
-
-  // Trouver un utilisateur par ID
-  async findById(id) {
-    const [rows] = await this.db.execute(
-      'SELECT * FROM users WHERE id = ?', 
-      [id]
-    );
-    return rows[0] || null;
-  }
-
-  // Créer un nouvel utilisateur
-  async create(userData) {
-    const hashedPassword = await User.hashPassword(userData.password);
-    
-    const [result] = await this.db.execute(
-      `INSERT INTO users 
-      (first_name, last_name, email, phone, password, cin, governorate, city, postal_code, role, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        userData.firstName,
-        userData.lastName,
-        userData.email,
-        userData.phone,
-        hashedPassword,
-        userData.cin,
-        userData.governorate,
-        userData.city,
-        userData.postalCode,
-        userData.role || 'benevole',
-        userData.status || 'pending'
-      ]
-    );
-
-    return this.findById(result.insertId);
-  }
-
-  // Mettre à jour un utilisateur
-  async update(id, updateData) {
-    if (updateData.password) {
-      updateData.password = await User.hashPassword(updateData.password);
-      updateData.password_changed_at = new Date();
-    }
-
-    const fields = [];
-    const values = [];
-    
-    for (const [key, value] of Object.entries(updateData)) {
-      // Convertir camelCase en snake_case pour les noms de colonnes
-      const dbKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      fields.push(`${dbKey} = ?`);
-      values.push(value);
-    }
-
-    if (fields.length === 0) {
-      return this.findById(id);
-    }
-
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-    values.push(id);
-
-    await this.db.execute(query, values);
-    return this.findById(id);
-  }
-
-  // Vérifier si le mot de passe a été changé après une date donnée
-  changedPasswordAfter(JWTTimestamp, passwordChangedAt) {
-    if (passwordChangedAt) {
-      const changedTimestamp = Math.floor(passwordChangedAt.getTime() / 1000);
-      return JWTTimestamp < changedTimestamp;
-    }
-    return false;
-  }
-}
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;

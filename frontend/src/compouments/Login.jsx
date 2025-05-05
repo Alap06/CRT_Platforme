@@ -63,11 +63,14 @@ const Login = () => {
       try {
         await login(email, password, rememberMe);
         // Redirect handled by useEffect when isAuthenticated changes
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         // Error handling is done in AuthContext
         setIsSubmitting(false);
       }
-    }
+    } else {
+      setIsSubmitting(false);
+    } 
   };
 
   return (

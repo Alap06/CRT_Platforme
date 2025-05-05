@@ -3,12 +3,12 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { check, validationResult } = require('express-validator');
-//router.post('/some-path', authMiddleware.someMiddleware, authController.someMethod);
+const { check } = require('express-validator');
+const { validate, userValidations } = require('../middlewares/validationMiddleware');
 
-// Define routes
+// Welcome route
 router.get('/', (req, res) => {
-  res.send('Hello from Express!');
+  res.send('Admin API - Welcome!');
 });
 
 /**
@@ -27,27 +27,17 @@ router.get('/pending-users',
  * @route   PUT /api/admin/users/:id/role
  * @desc    Modifie le rôle d'un utilisateur
  * @access  Private/Admin
- * @param   {number} id - ID de l'utilisateur
+ * @param   {string} id - ID de l'utilisateur
  * @returns {Object} Utilisateur mis à jour
  */
 router.put(
   '/users/:id/role',
   authMiddleware.protect,
   authMiddleware.restrictTo('admin'),
-  [
-    check('id').isInt().toInt(),
-    check('role').isIn(['benevole', 'donateur', 'partenaire', 'admin']).withMessage('Rôle invalide')
-  ],
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-    next();
-  },
+  validate([
+    userValidations.userId,
+    userValidations.role
+  ]),
   adminController.updateUserRole
 );
 
@@ -55,28 +45,17 @@ router.put(
  * @route   PUT /api/admin/users/:id/status
  * @desc    Modifie le statut d'un utilisateur
  * @access  Private/Admin
- * @param   {number} id - ID de l'utilisateur
+ * @param   {string} id - ID de l'utilisateur
  * @returns {Object} Utilisateur mis à jour
  */
-router.post('/login', authController.login); // Example
 router.put(
   '/users/:id/status',
   authMiddleware.protect,
   authMiddleware.restrictTo('admin'),
-  [
-    check('id').isInt().toInt(),
-    check('status').isIn(['pending', 'approved', 'suspended', 'banned']).withMessage('Statut invalide')
-  ],
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-    next();
-  },
+  validate([
+    userValidations.userId,
+    userValidations.status
+  ]),
   adminController.updateUserStatus
 );
 
@@ -116,22 +95,12 @@ router.get(
   '/users',
   authMiddleware.protect,
   authMiddleware.restrictTo('admin'),
-  [
+  validate([
     check('page').optional().isInt({ min: 1 }).toInt(),
     check('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     check('role').optional().isIn(['benevole', 'donateur', 'partenaire', 'admin']),
     check('status').optional().isIn(['pending', 'approved', 'suspended', 'banned'])
-  ],
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-    next();
-  },
+  ]),
   adminController.getAllUsers
 );
 
