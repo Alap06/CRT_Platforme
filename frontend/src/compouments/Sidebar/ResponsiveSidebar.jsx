@@ -50,44 +50,47 @@ const MenuToggle = () => {
 
 // Desktop sidebar component
 const DesktopSidebar = () => {
-  const { collapsed, setCollapsed, userRole } = useSidebar();
-  
-  // Get navigation items for current role
-  const roleConfig = navigationConfig.find(config => config.role === userRole);
-  const navItems = roleConfig?.items || [];
-  
-  return (
-    <aside 
-      className={`bg-white shadow-sm hidden md:flex md:flex-col transition-all duration-300 ease-in-out ${
-        collapsed ? 'w-16' : 'w-64'
-      }`}
-    >
-      <div className="p-4 flex justify-end">
-        <button 
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
-      
-      <nav className="mt-2 px-2 space-y-1 flex-grow">
-        {navItems.map(item => (
-          <NavItem 
-            key={item.id}
-            id={item.id}
-            label={item.label}
-            icon={item.icon}
-            notificationCount={item.notifications}
-          />
-        ))}
-      </nav>
-      
-      {!collapsed && <RoleSelector />}
-    </aside>
-  );
-};
+    const { collapsed, setCollapsed, userRole } = useSidebar();
+    
+    // Get navigation items for current role
+    const roleConfig = navigationConfig.find(config => config.role === userRole);
+    const navItems = roleConfig?.items || [];
+    
+    return (
+      <aside 
+        className={`bg-white shadow-sm hidden md:flex md:flex-col transition-all duration-300 ease-in-out ${
+          collapsed ? 'w-16' : 'w-64'
+        }`}
+      >
+        <div className={`p-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center`}>
+          {!collapsed && (
+            <h2 className="text-lg font-medium text-red-600">CRT Tozeur</h2>
+          )}
+          <button 
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100 focus:outline-none"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
+        
+        <nav className="mt-2 px-2 space-y-1 flex-grow">
+          {navItems.map(item => (
+            <NavItem 
+              key={item.id}
+              id={item.id}
+              label={item.label}
+              icon={item.icon}
+              notificationCount={item.notificationCount}
+            />
+          ))}
+        </nav>
+        
+        {!collapsed && <RoleSelector />}
+      </aside>
+    );
+  };
 
 // Mobile sidebar overlay
 const MobileSidebar = () => {
