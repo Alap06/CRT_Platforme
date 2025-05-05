@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL de base pour l'API d'authentification
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:5000/api';
 
 // Création d'une instance axios avec une configuration de base
 const authInstance = axios.create({

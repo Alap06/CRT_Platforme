@@ -32,9 +32,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
   },
-  server: {
-    port: 5173, // Port préféré
-    strictPort: false, // Permet à Vite de chercher un autre port si 4000 est occupé
-    open: true, // Ouvre automatiquement le navigateur
-  },
+  
 });

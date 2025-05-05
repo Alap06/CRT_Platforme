@@ -66,7 +66,7 @@ app.use(helmet());
 
 // Configuration CORS
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  origin: [process.env.CLIENT_URL, process.env.CORS_ORIGIN],
   credentials: true ,// Important si vous utilisez withCredentials: true
   optionsSuccessStatus: 200
 };
