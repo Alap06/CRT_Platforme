@@ -184,7 +184,7 @@ exports.verifyOwnership = (model, paramName = 'id') => {
  */
 exports.checkTempToken = (req, res, next) => {
   const token = req.params.token || req.query.token;
-
+  console.log("Réponse d'erreur complète:", error.response.data);
   if (!token) {
     return res.status(400).json({
       success: false,
@@ -192,6 +192,7 @@ exports.checkTempToken = (req, res, next) => {
       code: 'TEMP_TOKEN_MISSING'
     });
   }
+  console.log("Données envoyées:", userData);
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

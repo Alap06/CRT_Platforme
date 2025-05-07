@@ -38,20 +38,24 @@ export const authApi = {
    * @returns {Promise} - Promesse contenant les données de l'utilisateur créé
    */
   register(userData) {
-    // S'assurer que les données sont formatées comme attendu par le backend
+    // Format the data exactly as the backend expects
     const formattedData = {
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
+      firstName: userData.firstName,
+      lastName: userData.lastName,
       email: userData.email,
-      phone: userData.phone || '',
+      phone: userData.phone,
       password: userData.password,
-      cin: userData.cin || '',
-      governorate: userData.governorate || '',
-      city: userData.city || '',
-      postalCode: userData.postalCode || '',
-      role: userData.role || 'benevole',
-      status: userData.status || 'pending'
+      confirmPassword: userData.confirmPassword, // Add this if your backend expects it
+      cin: userData.cin,
+      governorate: userData.governorate,
+      city: userData.city,
+      postalCode: userData.postalCode,
+      role: userData.userType || 'benevole', // Changed from role to userType to match your form
+      status: userData.status || 'pending'// Add if required by backend
     };
+
+    // Add console.log to debug the payload
+    console.log('Sending registration data:', formattedData);
     
     return authInstance.post('/register', formattedData);
   },

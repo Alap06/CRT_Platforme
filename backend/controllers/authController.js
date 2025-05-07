@@ -21,11 +21,31 @@ const signToken = (payload) => {
 
 const register = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, cin, password, role } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      cin, 
+      password, 
+      city, 
+      governorate, 
+      postalCode, 
+      role 
+    } = req.body;
+    
+    // Vérification des champs obligatoires
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email et mot de passe sont requis',
+        code: 'MISSING_REQUIRED_FIELDS'
+      });
+    }
 
     // Normalize email to avoid case-sensitive duplicates
-    const normalizedEmail = email ? email.toLowerCase() : null;
-
+    const normalizedEmail = email.toLowerCase();
+    
     // Check for existing user with case-insensitive email check
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
@@ -35,28 +55,33 @@ const register = async (req, res, next) => {
         code: 'EMAIL_ALREADY_EXISTS'
       });
     }
-
-    // Ensure all required fields are present or use defaults for testing
+    
+    // Ensure all required fields are present
     const userData = {
       firstName: firstName || 'Test',
       lastName: lastName || 'User',
       email: normalizedEmail,
       phone: phone || '12345678',
       cin: cin || '12345678',
-      password: password || 'password123',
+      password,
       role: role || 'benevole',
-      status: process.env.NODE_ENV === 'test' ? 'approved' : 'pending'
+      status: 'pending',
+      // Ajout des nouveaux champs d'adresse
+      city: city || '',
+      governorate: governorate || '',
+      postalCode: postalCode || ''
     };
-
+    
     // Create new user
     const user = await User.create(userData);
-
+    
     res.status(201).json({
       success: true,
       data: {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        status: user.status
       }
     });
   } catch (err) {
@@ -67,7 +92,8 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
-        errors: Object.values(err.errors).map(e => e.message)
+        errors: Object.values(err.errors).map(e => e.message),
+        code: 'VALIDATION_ERROR'
       });
     }
     

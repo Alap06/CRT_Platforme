@@ -15,7 +15,8 @@ const Register = () => {
     city: '',
     postalCode: '',
     userType: 'benevole',
-    acceptTerms: false,
+    status: 'pending',
+    acceptTerms: false, // Ajout du champ manquant
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -28,7 +29,7 @@ const Register = () => {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/Login');
     }
     return () => clearErrors(); // Clear errors on unmount
   }, [isAuthenticated, navigate, clearErrors, loading]);
@@ -146,11 +147,13 @@ const Register = () => {
         postalCode: formData.postalCode,
         userType: formData.userType,
         password: formData.password,
+        confirmPassword: formData.confirmPassword, // Ajout du champ confirmPassword
+        status: 'pending',
       };
 
       try {
         await register(userData);
-        navigate('/dashboard');
+        // La redirection est maintenant gérée dans AuthContext.jsx
       } catch (err) {
         setSubmitError(err.response?.data?.message || "Échec de l'inscription");
         setIsSubmitting(false);
@@ -171,7 +174,7 @@ const Register = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img
           className="mx-auto h-16 w-auto"
-          src="/images/logo-croissant-rouge.png"
+          src="../images/logo-croissant-rouge.png"
           alt="Logo Croissant Rouge"
         />
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

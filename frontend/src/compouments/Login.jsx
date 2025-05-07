@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import Logo from '/images/logo-croissant-rouge.png';
+import Logo from '../images/logo-croissant-rouge.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,16 +12,25 @@ const Login = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { login, isAuthenticated, error, clearErrors } = useContext(AuthContext);
+  const { login, isAuthenticated, error,user, clearErrors } = useContext(AuthContext);
 
   // Extract form values
   const { email, password, rememberMe } = formData;
 
   useEffect(() => {
     // If user is already authenticated, redirect to dashboard
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated&&user.role==='admin') {
+      navigate('/AdminDashboard');
     }
+    if (isAuthenticated&&user.role==='benevole') {
+      navigate('/VolunteerDashboard');
+    }
+    if (isAuthenticated&&user.role==='partenaire') {
+      navigate('/PartnerDashboard');
+    }if (isAuthenticated&&user.role==='donateur') {
+      navigate('/DonorDashboard');
+    }
+    // les  role('admin','benevole','donateur','partenaire')
     // Clear any previous errors when component mounts
     clearErrors && clearErrors();
   }, [isAuthenticated, navigate, clearErrors]);
@@ -61,6 +70,7 @@ const Login = () => {
       setIsSubmitting(true);
       
       try {
+        console.log('Submitting form with:', { email, password, rememberMe });
         await login(email, password, rememberMe);
         // Redirect handled by useEffect when isAuthenticated changes
       // eslint-disable-next-line no-unused-vars

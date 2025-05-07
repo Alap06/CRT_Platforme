@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Logo from '../../public/images/logo-croissant-rouge.png';
+import Logo from '../images/logo-croissant-rouge.png';
 
 // Composant Bouton Connexion
 const LoginButton = ({ onClick, className = '' }) => {
