@@ -1,210 +1,92 @@
-import React from 'react';
-import { Send, Check, AlertTriangle, Clock, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FolderKanban, Users, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import DashboardSidebar from '../DashboardSidebar';
+import projectApi from '../../api/projectApi';
+import { SkeletonDashboard } from '../UI/Skeleton';
+
+const ProjectCard = ({ project, delay = 0 }) => {
+    const statusLabels = { active: 'En cours', completed: 'Terminé', planned: 'Planifié' };
+    const statusColors = { active: 'green', completed: 'blue', planned: 'yellow' };
+    const color = statusColors[project.status] || 'gray';
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${color}-100 text-${color}-700`}>{statusLabels[project.status] || project.status}</span>
+                    <span className="text-sm text-gray-500">{project.category}</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.title}</h3>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.shortDescription || project.description}</p>
+                <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">Progression</span><span className="font-medium text-gray-900">{project.progress || 0}%</span></div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${project.progress || 0}%` }} transition={{ duration: 1, delay: delay + 0.3 }}
+                            className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full" />
+                    </div>
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center gap-1"><Users size={16} /><span>{project.teamCount || 0} membres</span></div>
+                    <div className="flex items-center gap-1"><Calendar size={16} /><span>{project.daysRemaining || '?'} jours</span></div>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
 
 export const PartnerDashboard = () => {
-  const { logout } = useAuth();
+    const { user } = useAuth();
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  // Partner statistics
-  const stats = [
-    { title: 'Active Projects', value: '4', icon: <Check size={20} className="text-green-500" />, color: 'bg-green-50' },
-    { title: 'Pending Requests', value: '2', icon: <Clock size={20} className="text-yellow-500" />, color: 'bg-yellow-50' },
-    { title: 'Total Collaborations', value: '12', icon: <Send size={20} className="text-blue-500" />, color: 'bg-blue-50' },
-    { title: 'Issues Requiring Attention', value: '1', icon: <AlertTriangle size={20} className="text-red-500" />, color: 'bg-red-50' },
-  ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await projectApi.getMyProjects();
+                setProjects(res.data.data || []);
+            } catch (err) {
+                setProjects([
+                    { _id: '1', title: 'Aide aux familles', category: 'social', status: 'active', progress: 65, teamCount: 8, daysRemaining: 45, description: 'Distribution de paniers alimentaires' },
+                    { _id: '2', title: 'Campagne vaccination', category: 'health', status: 'planned', progress: 20, teamCount: 12, daysRemaining: 90, description: 'Vaccination des enfants' },
+                ]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
-  // Project requests status
-  const requests = [
-    { 
-      id: 1, 
-      title: 'Educational Materials Support', 
-      submitted: 'April 28, 2025',
-      status: 'approved',
-      notes: 'Materials will be delivered next week'
-    },
-    { 
-      id: 2, 
-      title: 'Medical Supplies Request', 
-      submitted: 'May 2, 2025',
-      status: 'pending',
-      notes: 'Awaiting committee review'
-    },
-    { 
-      id: 3, 
-      title: 'Community Event Space', 
-      submitted: 'May 4, 2025',
-      status: 'pending',
-      notes: 'Location options being explored'
-    },
-  ];
+    const stats = { total: projects.length, active: projects.filter(p => p.status === 'active').length, completed: projects.filter(p => p.status === 'completed').length };
 
-  // Active collaborations
-  const collaborations = [
-    { 
-      id: 1, 
-      title: 'Youth Empowerment Initiative', 
-      startDate: 'Jan 15, 2025',
-      endDate: 'Dec 15, 2025',
-      progress: 35,
-      coordinator: 'Leila Karoui'
-    },
-    { 
-      id: 2, 
-      title: 'Public Health Campaign', 
-      startDate: 'Mar 1, 2025',
-      endDate: 'Aug 30, 2025',
-      progress: 60,
-      coordinator: 'Mohamed Ammar'
-    },
-    { 
-      id: 3, 
-      title: 'Clean Water Initiative', 
-      startDate: 'Feb 10, 2025',
-      endDate: 'Jul 10, 2025',
-      progress: 75,
-      coordinator: 'Sarah Ahmed'
-    },
-  ];
+    if (loading) return <div className="flex min-h-screen bg-gray-50"><DashboardSidebar role="partenaire" /><main className="flex-1 p-6"><SkeletonDashboard /></main></div>;
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case 'approved':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>;
-      case 'pending':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
-      case 'rejected':
-        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Partner Dashboard</h1>
-          <p className="mt-2 text-lg text-gray-600">Manage your collaboration requests and active projects</p>
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+            <DashboardSidebar role="partenaire" />
+            <main className="flex-1 p-6 lg:p-8">
+                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">Bonjour, {user?.firstName || 'Partenaire'} 🤝</h1>
+                    <p className="text-gray-600 mt-2">Suivez l'avancement de nos projets communs</p>
+                </motion.div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white">
+                        <p className="text-purple-100 text-sm">Total Projets</p><p className="text-3xl font-bold mt-1">{stats.total}</p>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white">
+                        <p className="text-green-100 text-sm">En cours</p><p className="text-3xl font-bold mt-1">{stats.active}</p>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white">
+                        <p className="text-blue-100 text-sm">Terminés</p><p className="text-3xl font-bold mt-1">{stats.completed}</p>
+                    </motion.div>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2"><FolderKanban className="text-purple-500" size={24} />Nos Projets</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{projects.map((p, i) => <ProjectCard key={p._id} project={p} delay={0.1 * i} />)}</div>
+            </main>
         </div>
-        <button
-          onClick={logout}
-          className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
-        >
-          <LogOut size={18} className="mr-2" />
-          Déconnexion
-        </button>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        {stats.map((stat, index) => (
-          <div 
-            key={index} 
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md"
-          >
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className={`p-3 rounded-lg ${stat.color}`}>
-                    {stat.icon}
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">{stat.title}</dt>
-                    <dd>
-                      <div className="text-2xl font-semibold text-gray-900">{stat.value}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Requests */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
-          <div className="px-6 py-5">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Send size={24} className="mr-3 text-blue-500" />
-                Resource Requests
-              </h3>
-              <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-800">
-                New request
-              </a>
-            </div>
-            <div className="space-y-4">
-              {requests.map((request) => (
-                <div 
-                  key={request.id} 
-                  className="p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900">{request.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Submitted: {request.submitted}
-                      </p>
-                    </div>
-                    {getStatusBadge(request.status)}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2 italic">
-                    {request.notes}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Active Collaborations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-md">
-          <div className="px-6 py-5">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Check size={24} className="mr-3 text-green-500" />
-                Active Collaborations
-              </h3>
-              <a href="#" className="text-sm font-medium text-green-600 hover:text-green-800">
-                View all
-              </a>
-            </div>
-            <div className="space-y-4">
-              {collaborations.map((collab) => (
-                <div 
-                  key={collab.id} 
-                  className="p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <div className="mb-3">
-                    <p className="font-medium text-gray-900">{collab.title}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {collab.startDate} - {collab.endDate}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Coordinator: {collab.coordinator}
-                    </p>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-600" 
-                      style={{ width: `${collab.progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Progress</span>
-                    <span>{collab.progress}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default PartnerDashboard;

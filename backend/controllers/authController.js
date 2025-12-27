@@ -165,7 +165,10 @@ const login = async (req, res, next) => {
     // Find user by email (case insensitive)
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
     
+    console.log('User found:', user ? 'YES' : 'NO');
+    
     if (!user && !isTesting) {
+      console.log('Login failed: User not found');
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect',
@@ -177,11 +180,13 @@ const login = async (req, res, next) => {
     let isMatch = false;
     try {
       isMatch = isTesting || (user && await user.comparePassword(password));
+      console.log('Password match:', isMatch);
     } catch (passwordErr) {
       console.error('Password comparison error:', passwordErr);
     }
     
     if (!isMatch) {
+      console.log('Login failed: Password mismatch');
       return res.status(401).json({
         success: false,
         message: 'Email ou mot de passe incorrect',

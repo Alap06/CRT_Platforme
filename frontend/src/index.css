@@ -1,1 +1,35 @@
 @import "tailwindcss";
+@import "./styles/animations.css";
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c4c4c4;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+*:focus-visible {
+    outline: 2px solid #dc2626;
+    outline-offset: 2px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+::selection {
+    background-color: #dc2626;
+    color: white;
+}
