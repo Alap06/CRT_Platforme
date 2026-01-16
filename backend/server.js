@@ -21,7 +21,13 @@ connectDB();
 const app = express();
 
 // Middleware de sécurité
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Serve static files (uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Configuration CORS
 const corsOptions = {
@@ -63,15 +69,15 @@ if (process.env.NODE_ENV === 'development') {
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 
 // Improve body parsing with more flexibility
-app.use(express.json({ 
-  limit: '10kb', 
+app.use(express.json({
+  limit: '10kb',
   strict: false,
   reviver: (key, value) => value
 }));
 
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: '10kb' 
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10kb'
 }));
 
 app.use(cookieParser());
@@ -81,12 +87,12 @@ app.use((req, res, next) => {
   // Log raw body for debugging if content-type is not recognized
   if (req.method === 'POST' && !req.body && req._body === false) {
     console.log('Raw body parsing needed - content type:', req.headers['content-type']);
-    
+
     let data = '';
     req.on('data', chunk => {
       data += chunk;
     });
-    
+
     req.on('end', () => {
       console.log('Raw request body:', data);
       try {
@@ -116,9 +122,9 @@ app.use((req, res, next) => {
 // Gestion des erreurs serveur
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  
+
   const statusCode = err.statusCode || 500;
-  
+
   res.status(statusCode).json({
     success: false,
     message: err.message || 'Erreur serveur',

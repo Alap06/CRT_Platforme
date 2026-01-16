@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Users, Calendar, HandHeart, FolderKanban, Building2, Newspaper, Mail, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, HandHeart, FolderKanban, Building2, Newspaper, Mail, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Package, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../images/logo-croissant-rouge.png';
 
@@ -10,6 +10,8 @@ const menuItems = {
         { icon: LayoutDashboard, label: 'Tableau de bord', path: '/AdminDashboard' },
         { icon: Users, label: 'Utilisateurs', path: '/admin/users' },
         { icon: Calendar, label: 'Activités', path: '/admin/activities' },
+        { icon: FileText, label: 'Rapports', path: '/admin/reports' },
+        { icon: Package, label: 'Ressources', path: '/admin/resources' },
         { icon: HandHeart, label: 'Donations', path: '/admin/donations' },
         { icon: FolderKanban, label: 'Projets', path: '/admin/projects' },
         { icon: Building2, label: 'Comités', path: '/admin/committees' },
@@ -18,6 +20,7 @@ const menuItems = {
         { icon: BarChart3, label: 'Statistiques', path: '/stat' },
         { icon: Settings, label: 'Paramètres', path: '/admin/settings' },
     ],
+
     benevole: [
         { icon: LayoutDashboard, label: 'Tableau de bord', path: '/VolunteerDashboard' },
         { icon: Calendar, label: 'Mes Activités', path: '/volunteer/activities' },

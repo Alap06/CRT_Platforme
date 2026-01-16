@@ -11,6 +11,8 @@ const committeeRoutes = require('./committeeRoutes');
 const newsRoutes = require('./newsRoutes');
 const contactRoutes = require('./contactRoutes');
 const statsRoutes = require('./statsRoutes');
+const resourceRoutes = require('./resourceRoutes');
+const activityReportRoutes = require('./activityReportRoutes');
 
 // Montage des routeurs sur les chemins appropriés
 router.use('/auth', authRoutes);
@@ -22,5 +24,7 @@ router.use('/committees', committeeRoutes);
 router.use('/news', newsRoutes);
 router.use('/contacts', contactRoutes);
 router.use('/stats', statsRoutes);
+router.use('/resources', resourceRoutes);
+router.use('/reports', activityReportRoutes);
 
 module.exports = router;

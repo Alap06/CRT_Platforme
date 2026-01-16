@@ -13,6 +13,9 @@ import PartnerDashboard from './compouments/Sidebar/PartnerDashboard';
 import DonorDashboard from './compouments/Sidebar/DonorDashboard';
 import UsersManagement from './compouments/Admin/UsersManagement';
 import ActivitiesManagement from './compouments/Admin/ActivitiesManagement';
+import NewsManagement from './compouments/Admin/NewsManagement';
+import ResourcesManagement from './compouments/Admin/ResourcesManagement';
+import ActivityReportsManagement from './compouments/Admin/ActivityReportsManagement';
 import ComingSoon from './compouments/Admin/ComingSoon';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
@@ -60,10 +63,12 @@ function App() {
         <Route path="/AdminDashboard" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><AdminDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><UsersManagement /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/activities" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ActivitiesManagement /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ActivityReportsManagement /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/admin/resources" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ResourcesManagement /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/admin/news" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><NewsManagement /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/donations" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Gestion des Donations" role="admin" /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/projects" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Gestion des Projets" role="admin" /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/committees" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Gestion des Comités" role="admin" /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/admin/news" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Gestion des Actualités" role="admin" /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/contacts" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Gestion des Messages" role="admin" /></DashboardLayout></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><DashboardLayout><ComingSoon title="Paramètres" role="admin" /></DashboardLayout></ProtectedRoute>} />
 

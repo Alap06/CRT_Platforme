@@ -15,10 +15,16 @@ const ActivitiesManagement = () => {
         setError(null);
         try {
             const response = await activitiesApi.getAllActivities();
-            setActivities(response.data.data || response.data || []);
+            // Ensure we always get an array
+            let activitiesData = response.data?.data || response.data?.activities || response.data || [];
+            if (!Array.isArray(activitiesData)) {
+                activitiesData = [];
+            }
+            setActivities(activitiesData);
         } catch (err) {
             console.error('Error fetching activities:', err);
             setError('Impossible de charger les activités');
+            setActivities([]);
         } finally {
             setLoading(false);
         }
@@ -48,7 +54,10 @@ const ActivitiesManagement = () => {
         return <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${config[status]?.color || 'bg-gray-100 text-gray-700'}`}>{config[status]?.label || status}</span>;
     };
 
-    const filteredActivities = filter === 'all' ? activities : activities.filter(a => a.status === filter);
+    // Safety check: ensure activities is always an array
+    const safeActivities = Array.isArray(activities) ? activities : [];
+    const filteredActivities = filter === 'all' ? safeActivities : safeActivities.filter(a => a.status === filter);
+
 
     return (
         <div className="flex min-h-screen bg-gray-50">

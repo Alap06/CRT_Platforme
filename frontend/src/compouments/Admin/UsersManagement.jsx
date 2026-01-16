@@ -18,10 +18,16 @@ const UsersManagement = () => {
         setError(null);
         try {
             const response = await adminApi.getAllUsers();
-            setUsers(response.data.data || response.data || []);
+            // Ensure we always get an array
+            let userData = response.data?.data || response.data?.users || response.data || [];
+            if (!Array.isArray(userData)) {
+                userData = [];
+            }
+            setUsers(userData);
         } catch (err) {
             console.error('Error fetching users:', err);
             setError('Impossible de charger les utilisateurs');
+            setUsers([]);
         } finally {
             setLoading(false);
         }
@@ -32,7 +38,7 @@ const UsersManagement = () => {
     const handleApprove = async (userId) => {
         try {
             await adminApi.updateUserStatus(userId, 'approved');
-            setUsers(users.map(u => u._id === userId ? { ...u, status: 'approved' } : u));
+            setUsers(prev => prev.map(u => u._id === userId ? { ...u, status: 'approved' } : u));
         } catch (err) {
             console.error('Error approving user:', err);
         }
@@ -41,18 +47,22 @@ const UsersManagement = () => {
     const handleReject = async (userId) => {
         try {
             await adminApi.updateUserStatus(userId, 'suspended');
-            setUsers(users.map(u => u._id === userId ? { ...u, status: 'suspended' } : u));
+            setUsers(prev => prev.map(u => u._id === userId ? { ...u, status: 'suspended' } : u));
         } catch (err) {
             console.error('Error rejecting user:', err);
         }
     };
 
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = `${user.firstName} ${user.lastName} ${user.email}`.toLowerCase().includes(searchTerm.toLowerCase());
+    // Safety check: ensure users is always an array
+    const safeUsers = Array.isArray(users) ? users : [];
+
+    const filteredUsers = safeUsers.filter(user => {
+        const matchesSearch = `${user.firstName || ''} ${user.lastName || ''} ${user.email || ''}`.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = filterRole === 'all' || user.role === filterRole;
         const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
         return matchesSearch && matchesRole && matchesStatus;
     });
+
 
     const getRoleBadge = (role) => {
         const colors = { admin: 'bg-purple-100 text-purple-700', benevole: 'bg-blue-100 text-blue-700', donateur: 'bg-green-100 text-green-700', partenaire: 'bg-red-100 text-red-700' };
